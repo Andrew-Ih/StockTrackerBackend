@@ -17,14 +17,19 @@ namespace StockTracker
             _logger = logger;
         }
 
-        [Function("Function1")]
-        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Function, "post", Route = "Test/StockDetails")] HttpRequest req)
+        [Function("GetStockDetails")]
+        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "StockDetails")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            
+
             Stock? stockObject = await GetStockObjectDetailsAsync(requestBody);
+
+            if (stockObject == null)
+            {
+                return new BadRequestObjectResult("No Stock data available.");
+            }
 
             return new OkObjectResult(stockObject);
         }

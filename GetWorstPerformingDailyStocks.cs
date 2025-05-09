@@ -17,11 +17,16 @@ namespace StockTracker
         }
 
         [Function("GetWorstPerformingDailyStocks")]
-        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Function, "post", Route = "Test/WorstPerformingStocks")] HttpRequest req)
+        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "WorstPerformingStocks")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             List<TopOrWorstGainers>? worstGainers = await GetTopBestOrWorstPerformingStocksAsync("top_losers");
+
+            if (worstGainers == null)
+            {
+                return new BadRequestObjectResult("No worst-performing stocks data available.");
+            }
 
             return new OkObjectResult(worstGainers);
         }

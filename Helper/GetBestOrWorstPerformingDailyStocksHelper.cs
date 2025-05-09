@@ -10,54 +10,49 @@ namespace StockTracker.Helper
 {
     public static class GetBestOrWorstPerformingDailyStocksHelper
     {
+        private static readonly string? AlphavantageStockPerformanceDetailsApi = Environment.GetEnvironmentVariable("AlphavantageStockPerformanceDetailsApi");
+
         public static async Task<List<TopOrWorstGainers>?> GetTopBestOrWorstPerformingStocksAsync(string stockType)
         {
             using (HttpClient client = new HttpClient())
             {
-                string apiUrl = $"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=JCNUVCJ6WID61HZR";
+                string? apiUrl = AlphavantageStockPerformanceDetailsApi;
                 HttpResponseMessage response = await client.GetAsync(apiUrl);
+                List<TopOrWorstGainers>? result = null;
 
                 if (response.IsSuccessStatusCode)
                 {
                     string responseData = await response.Content.ReadAsStringAsync();
-
-                    return ReadTopGainersResponse(responseData, stockType);
+                    result = ProcessStockPerformaceData(responseData, stockType);
                 }
-                else
-                {
-                    return null;
-                }
+                return result;
             }
         }
 
-        public static List<TopOrWorstGainers>? ReadTopGainersResponse(string responseData, string stockType)
+        public static List<TopOrWorstGainers>? ProcessStockPerformaceData(string responseData, string stockType)
         {
             try
             {
                 var stockData = JsonDocument.Parse(responseData);
 
                 // Ensure "top_gainers" property exists in JSON response
-                if (!stockData.RootElement.TryGetProperty(stockType, out JsonElement gainersArray) || gainersArray.GetArrayLength() < 10)
+                if (!stockData.RootElement.TryGetProperty(stockType, out JsonElement gainersArray))
                 {
-                    Console.WriteLine("Not enough top gainers data available.");
                     return null;
                 }
 
-                List<TopOrWorstGainers> gainersList = new List<TopOrWorstGainers>();
+                List<TopOrWorstGainers> gainersList = [];
 
-                // Loop through the top 10 stocks in the array
-                for (int i = 0; i < Math.Min(10, gainersArray.GetArrayLength()); i++)
+                for (int i = 0; i < 10; i++)
                 {
                     var gainer = gainersArray[i];
 
-                    string ticker = gainer.TryGetProperty("ticker", out var tickerElement) && tickerElement.ValueKind == JsonValueKind.String ? tickerElement.GetString() ?? "Unknown" : "Unknown";
-                    decimal price = gainer.TryGetProperty("price", out var priceElement) && priceElement.ValueKind == JsonValueKind.String ? Convert.ToDecimal(priceElement.GetString()) : 0;
-                    decimal changeAmount = gainer.TryGetProperty("change_amount", out var changeAmountElement) && changeAmountElement.ValueKind == JsonValueKind.String ? Convert.ToDecimal(changeAmountElement.GetString()) : 0;
-                    decimal changePercentage = gainer.TryGetProperty("change_percentage", out var changePercentageElement) && changePercentageElement.ValueKind == JsonValueKind.String ? Convert.ToDecimal(changePercentageElement.GetString().Replace("%", "")) : 0;
-                    decimal volume = gainer.TryGetProperty("volume", out var volumeElement) && volumeElement.ValueKind == JsonValueKind.String ? Convert.ToDecimal(volumeElement.GetString()) : 0;
+                    string ticker = GetJsonValue(gainer, "ticker", "Unknown");
+                    decimal price = GetJsonValue(gainer, "price", 0m);
+                    decimal changeAmount = GetJsonValue(gainer, "change_amount", 0m);
+                    decimal changePercentage = GetJsonValue(gainer, "change_percentage", 0m);
+                    decimal volume = GetJsonValue(gainer, "volume", 0m);
 
-
-                    // Create and add the object to the list
                     gainersList.Add(new TopOrWorstGainers(ticker, price, changeAmount, changePercentage, volume));
                 }
 
@@ -65,9 +60,24 @@ namespace StockTracker.Helper
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error parsing top gainers data: {ex.Message}");
                 return null;
             }
+        }
+
+        public static T GetJsonValue<T>(JsonElement element, string propertyName, T defaultValue)
+        {
+            if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String)
+            {
+                try
+                {
+                    return (T)Convert.ChangeType(property.GetString()?.Replace("%", "") ?? "0", typeof(T));
+                }
+                catch
+                {
+                    return defaultValue;
+                }
+            }
+            return defaultValue;
         }
     }
 }

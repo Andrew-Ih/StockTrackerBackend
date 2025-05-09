@@ -12,37 +12,45 @@ namespace StockTracker.Helper
 {
     public static class GetStockDetailsHelper
     {
+        private static readonly string? MarketStackStockDetailsApi = Environment.GetEnvironmentVariable("MarketStackStockDetails");
         public static async Task<Stock?> GetStockObjectDetailsAsync(string requestBody)
+        {
+            string? stockSymbol = ExtractStockSymbol(requestBody);
+
+            if (string.IsNullOrEmpty(stockSymbol))
+            {
+                return null;
+            }
+
+            using (HttpClient client = new HttpClient())
+            {
+                string apiUrl = MarketStackStockDetailsApi + stockSymbol;
+                HttpResponseMessage response = await client.GetAsync(apiUrl);
+                Stock? stockObject = null;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseData = await response.Content.ReadAsStringAsync();
+                    stockObject = ProcessStockApiResponse(responseData);    
+                }
+
+                return stockObject;
+            }
+        }
+        public static string? ExtractStockSymbol(string requestBody)
         {
             var requestData = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
 
             // Ensure the request contains a valid stock symbol
             if (requestData == null || !requestData.TryGetValue("stockSymbol", out string? stockSymbol) || string.IsNullOrEmpty(stockSymbol))
             {
-                Console.WriteLine("Stock symbol is missing or invalid.");
                 return null;
             }
 
-            using (HttpClient client = new HttpClient())
-            {
-                string apiUrl = $"http://api.marketstack.com/v2/eod?access_key=185793059cef5d26516a98175393f267&symbols={stockSymbol}";
-                HttpResponseMessage response = await client.GetAsync(apiUrl);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseData = await response.Content.ReadAsStringAsync();
-                    Stock? stockObject = ReadStockResponse(responseData);
-
-                    return stockObject;
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            return stockSymbol;
         }
 
-        public static Stock? ReadStockResponse(string responseData)
+        public static Stock? ProcessStockApiResponse(string responseData)
         {
             try
             {
