@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
 using StockTracker.Models;
 
 namespace StockTracker.Helper
 {
     public static class GetStockDetailsHelper
     {
-        private static readonly string? MarketStackStockDetailsApi = Environment.GetEnvironmentVariable("MarketStackStockDetails");
-        public static async Task<Stock?> GetStockObjectDetailsAsync(string requestBody)
+        private static readonly string? MarketStackStockDetailsApi = Environment.GetEnvironmentVariable("MarketStackStockDetailsApi");
+        public static async Task<StockDetails?> GetStockObjectDetailsAsync(string requestBody)
         {
             string? stockSymbol = ExtractStockSymbol(requestBody);
 
@@ -22,20 +15,18 @@ namespace StockTracker.Helper
                 return null;
             }
 
-            using (HttpClient client = new HttpClient())
+            using HttpClient client = new();
+            string apiUrl = MarketStackStockDetailsApi + stockSymbol;
+            HttpResponseMessage response = await client.GetAsync(apiUrl);
+            StockDetails? stockObject = null;
+
+            if (response.IsSuccessStatusCode)
             {
-                string apiUrl = MarketStackStockDetailsApi + stockSymbol;
-                HttpResponseMessage response = await client.GetAsync(apiUrl);
-                Stock? stockObject = null;
-
-                if (response.IsSuccessStatusCode)
-                {
-                    string responseData = await response.Content.ReadAsStringAsync();
-                    stockObject = ProcessStockApiResponse(responseData);    
-                }
-
-                return stockObject;
+                string responseData = await response.Content.ReadAsStringAsync();
+                stockObject = ProcessStockApiResponse(responseData);
             }
+
+            return stockObject;
         }
         public static string? ExtractStockSymbol(string requestBody)
         {
@@ -50,7 +41,7 @@ namespace StockTracker.Helper
             return stockSymbol;
         }
 
-        public static Stock? ProcessStockApiResponse(string responseData)
+        public static StockDetails? ProcessStockApiResponse(string responseData)
         {
             try
             {
@@ -64,7 +55,6 @@ namespace StockTracker.Helper
                     var currentDayStock = stockEntries[0];
                     var previousDayStock = stockEntries[1];
 
-                    // Extract required data
                     stockName = currentDayStock.GetProperty("name").GetString();
                     stockSymbol = currentDayStock.GetProperty("symbol").GetString();
                     decimal price = currentDayStock.GetProperty("close").GetDecimal();
@@ -75,11 +65,15 @@ namespace StockTracker.Helper
                     decimal previousClosePrice = previousDayStock.GetProperty("close").GetDecimal();
                     decimal dailyVolume = currentDayStock.GetProperty("volume").GetDecimal();
 
-                    // Create Stock object
                     if (stockName != null && stockSymbol != null)
                     {
-                        return new Stock(stockName, stockSymbol, price, dailyHigh, dailyLow, openPrice, closePrice, previousClosePrice, dailyVolume);
-                    } else
+                        return new StockDetails
+                        {
+                            StockName = stockName, StockSymbol = stockSymbol, Price = price, DailyHigh = dailyHigh, DailyLow = dailyLow,
+                            OpenPrice = openPrice, ClosePrice = closePrice, PreviousDayClosePrice = previousClosePrice, DailyVolume = dailyVolume
+                        };
+                    }
+                    else
                     {
                         return null;
                     }

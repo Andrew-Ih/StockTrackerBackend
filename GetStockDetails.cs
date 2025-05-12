@@ -24,11 +24,12 @@ namespace StockTracker
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            Stock? stockObject = await GetStockObjectDetailsAsync(requestBody);
+            StockDetails? stockObject = await GetStockObjectDetailsAsync(requestBody);
 
             if (stockObject == null)
             {
-                return new BadRequestObjectResult("No Stock data available.");
+                //return new OkObjectResult("No Stock data available.");
+                return new NoContentResult(); // Returns 204 if no data is available
             }
 
             return new OkObjectResult(stockObject);

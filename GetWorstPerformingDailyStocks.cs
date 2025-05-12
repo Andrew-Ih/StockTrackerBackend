@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using static StockTracker.Helper.GetBestOrWorstPerformingDailyStocksHelper;
+using static StockTracker.Helper.GetStockPerformanceListHelper;
 using StockTracker.Models;
 
 namespace StockTracker
@@ -10,7 +10,8 @@ namespace StockTracker
     public class GetWorstPerformingDailyStocks
     {
         private readonly ILogger<GetWorstPerformingDailyStocks> _logger;
-
+        private static readonly string? TopLosersRootElement = Environment.GetEnvironmentVariable("TopLosersRootElement");
+        
         public GetWorstPerformingDailyStocks(ILogger<GetWorstPerformingDailyStocks> logger)
         {
             _logger = logger;
@@ -21,14 +22,14 @@ namespace StockTracker
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            List<TopOrWorstGainers>? worstGainers = await GetTopBestOrWorstPerformingStocksAsync("top_losers");
-
-            if (worstGainers == null)
+            if (TopLosersRootElement != null)
             {
-                return new BadRequestObjectResult("No worst-performing stocks data available.");
+                List<StockPerformers>? worstGainers = await GetStockPerformanceListAsync(TopLosersRootElement);
+                return new OkObjectResult(worstGainers);
             }
 
-            return new OkObjectResult(worstGainers);
+            //return new OkObjectResult("No worst-performing stocks data available."); 
+            return new NoContentResult(); // Returns 204 if no data is available
         }
     }
 }
