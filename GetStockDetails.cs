@@ -4,7 +4,6 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using static StockTracker.Helper.GetStockDetailsHelper;
 using StockTracker.Models;
-using System.Text.Json;
 
 namespace StockTracker
 {
@@ -26,10 +25,9 @@ namespace StockTracker
 
             StockDetails? stockObject = await GetStockObjectDetailsAsync(requestBody);
 
-            if (stockObject == null)
+            if (stockObject?.IsNull == true)
             {
-                //return new OkObjectResult("No Stock data available.");
-                return new NoContentResult(); // Returns 204 if no data is available
+                return new NoContentResult();
             }
 
             return new OkObjectResult(stockObject);

@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using static StockTracker.Helper.GetStockPerformanceListHelper;
 using StockTracker.Models;
+using static StockTracker.Helper.GetStockPerformanceHelper;
 
 namespace StockTracker
 {
@@ -24,12 +24,14 @@ namespace StockTracker
 
             if (TopLosersRootElement != null)
             {
-                List<StockPerformers>? worstGainers = await GetStockPerformanceListAsync(TopLosersRootElement);
-                return new OkObjectResult(worstGainers);
+                List<StockPerformers>? worstGainers = await GetStockPerformanceAsync(TopLosersRootElement);
+                if (worstGainers?.Count != 0)
+                {
+                    return new OkObjectResult(worstGainers);
+                }           
             }
 
-            //return new OkObjectResult("No worst-performing stocks data available."); 
-            return new NoContentResult(); // Returns 204 if no data is available
+            return new NoContentResult(); 
         }
     }
 }

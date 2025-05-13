@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace StockTracker.Models
+﻿namespace StockTracker.Models
 {
     public class StockDetails
     {
@@ -18,5 +11,7 @@ namespace StockTracker.Models
         public decimal ClosePrice { get; set; }
         public decimal PreviousDayClosePrice { get; set; }
         public decimal DailyVolume { get; set; }
+        public bool IsNull { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 }

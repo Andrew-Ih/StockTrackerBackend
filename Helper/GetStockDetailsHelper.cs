@@ -8,86 +8,96 @@ namespace StockTracker.Helper
         private static readonly string? MarketStackStockDetailsApi = Environment.GetEnvironmentVariable("MarketStackStockDetailsApi");
         public static async Task<StockDetails?> GetStockObjectDetailsAsync(string requestBody)
         {
+            StockDetails? stockObject = new();
             string? stockSymbol = ExtractStockSymbol(requestBody);
 
             if (string.IsNullOrEmpty(stockSymbol))
             {
-                return null;
+                stockObject.IsNull = true;
+                stockObject.ErrorMessage = "Error extracting stock symbol";
             }
-
-            using HttpClient client = new();
-            string apiUrl = MarketStackStockDetailsApi + stockSymbol;
-            HttpResponseMessage response = await client.GetAsync(apiUrl);
-            StockDetails? stockObject = null;
-
-            if (response.IsSuccessStatusCode)
+            else
             {
-                string responseData = await response.Content.ReadAsStringAsync();
-                stockObject = ProcessStockApiResponse(responseData);
-            }
+                using HttpClient client = new();
+                string apiUrl = MarketStackStockDetailsApi + stockSymbol;
+                HttpResponseMessage response = await client.GetAsync(apiUrl);
 
+                if (response.IsSuccessStatusCode)
+                {
+                    string responseData = await response.Content.ReadAsStringAsync();
+                    stockObject = ProcessStockApiResponse(responseData);
+                }
+            }
             return stockObject;
         }
+
         public static string? ExtractStockSymbol(string requestBody)
         {
             var requestData = JsonSerializer.Deserialize<Dictionary<string, string>>(requestBody);
+            return ValidateRequestData(requestData, out var stockSymbol) ? stockSymbol : null;
+        }
 
-            // Ensure the request contains a valid stock symbol
-            if (requestData == null || !requestData.TryGetValue("stockSymbol", out string? stockSymbol) || string.IsNullOrEmpty(stockSymbol))
-            {
-                return null;
-            }
-
-            return stockSymbol;
+        public static bool ValidateRequestData(Dictionary<string, string>? requestData, out string? stockSymbol)
+        {
+            stockSymbol = requestData?.GetValueOrDefault("stockSymbol");
+            return !string.IsNullOrEmpty(stockSymbol);
         }
 
         public static StockDetails? ProcessStockApiResponse(string responseData)
         {
+            StockDetails? stockObject = new();
             try
             {
                 var stockData = JsonDocument.Parse(responseData);
                 var stockEntries = stockData.RootElement.GetProperty("data");
-                string? stockName = "";
-                string? stockSymbol = "";
-
+                
                 if (stockEntries.GetArrayLength() >= 2) // Ensure we have at least two days of data
                 {
-                    var currentDayStock = stockEntries[0];
-                    var previousDayStock = stockEntries[1];
-
-                    stockName = currentDayStock.GetProperty("name").GetString();
-                    stockSymbol = currentDayStock.GetProperty("symbol").GetString();
-                    decimal price = currentDayStock.GetProperty("close").GetDecimal();
-                    decimal dailyHigh = currentDayStock.GetProperty("high").GetDecimal();
-                    decimal dailyLow = currentDayStock.GetProperty("low").GetDecimal();
-                    decimal openPrice = currentDayStock.GetProperty("open").GetDecimal();
-                    decimal closePrice = currentDayStock.GetProperty("close").GetDecimal();
-                    decimal previousClosePrice = previousDayStock.GetProperty("close").GetDecimal();
-                    decimal dailyVolume = currentDayStock.GetProperty("volume").GetDecimal();
-
-                    if (stockName != null && stockSymbol != null)
-                    {
-                        return new StockDetails
-                        {
-                            StockName = stockName, StockSymbol = stockSymbol, Price = price, DailyHigh = dailyHigh, DailyLow = dailyLow,
-                            OpenPrice = openPrice, ClosePrice = closePrice, PreviousDayClosePrice = previousClosePrice, DailyVolume = dailyVolume
-                        };
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    stockObject = ExtractStockDetails(stockEntries);
                 }
                 else
                 {
-                    throw new Exception("Not enough data available.");
+                    stockObject.IsNull = true;
+                    stockObject.ErrorMessage = "Not Enough Stock Data Available";
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error parsing stock data: {ex.Message}");
-                return null;
+                if (stockObject != null) {
+                    stockObject.IsNull = true;
+                    stockObject.ErrorMessage = "Error Processing Stock Data";
+                }
             }
+            return stockObject;
+        }
+
+        public static StockDetails? ExtractStockDetails(JsonElement stockEntries)
+        {
+            StockDetails? stockObject = new();
+            var currentDayStock = stockEntries[0];
+            var previousDayStock = stockEntries[1];
+
+            string? stockName = currentDayStock.GetProperty("name").GetString(); ;
+            string? stockSymbol = currentDayStock.GetProperty("symbol").GetString();
+
+            if (stockName != null && stockSymbol != null)
+            {
+                stockObject.StockName = stockName;
+                stockObject.StockSymbol = stockSymbol;
+                stockObject.Price = currentDayStock.GetProperty("close").GetDecimal();
+                stockObject.DailyHigh = currentDayStock.GetProperty("high").GetDecimal();
+                stockObject.DailyLow = currentDayStock.GetProperty("low").GetDecimal();
+                stockObject.OpenPrice = currentDayStock.GetProperty("open").GetDecimal();
+                stockObject.ClosePrice = currentDayStock.GetProperty("close").GetDecimal();
+                stockObject.PreviousDayClosePrice = previousDayStock.GetProperty("close").GetDecimal();
+                stockObject.DailyVolume = currentDayStock.GetProperty("volume").GetDecimal();
+            }
+            else
+            {
+                stockObject.IsNull = true;
+                stockObject.ErrorMessage = "Error Extracting Stock Details";
+            }
+            return stockObject;
         }
     }
 }
