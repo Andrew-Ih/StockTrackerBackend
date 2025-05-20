@@ -17,14 +17,14 @@ namespace StockTracker
         }
 
         [Function("GetStockDetails")]
-        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "StockDetails")] HttpRequest req, ILogger log)
+        public async Task<IActionResult> RunAsync([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "StockDetails")] HttpRequest req)
         {
             _logger.LogInformation("C# HTTP trigger function processed a request.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            // Log the request payload to Application Insights
-            _logger.LogInformation("Received Payload: {RequestBody}", requestBody);
+            var logData = new { Payload = requestBody, Timestamp = DateTime.UtcNow };
+            _logger.LogInformation("Payload Information: {@LogData}", logData);
 
             StockDetails? stockObject = await GetStockObjectDetailsAsync(requestBody);
 
