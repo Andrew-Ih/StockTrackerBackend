@@ -24,7 +24,7 @@ namespace StockTracker
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
             // Log the request payload to Application Insights
-            log.LogInformation("Received Payload: {RequestBody}", requestBody);
+            _logger.LogInformation("Received Payload: {RequestBody}", requestBody);
 
             StockDetails? stockObject = await GetStockObjectDetailsAsync(requestBody);
 
