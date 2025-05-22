@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using static StockTracker.Helper.GetStockDetailsHelper;
+using static StockTracker.Helper.LogPayload;
 using StockTracker.Models;
 
 namespace StockTracker
@@ -23,8 +24,7 @@ namespace StockTracker
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            var logData = new { Payload = requestBody, Timestamp = DateTime.UtcNow };
-            _logger.LogInformation("Payload Information: {@LogData}", logData);
+            LogPayloadToApplicationInsights(_logger, requestBody);
 
             StockDetails? stockObject = await GetStockObjectDetailsAsync(requestBody);
 
