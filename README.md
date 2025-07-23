@@ -7,6 +7,17 @@ This **Azure Function App** is built using **C#** to provide stock market data v
 	
 To view this project live, please visit the link: https://purple-ocean-0e575860f.6.azurestaticapps.net/
 -->
+## Screenshots
+
+### 1. Stock Search
+
+<img src="src/app/img/stockSearch.png" alt="Stock Search UI" width="600"/>
+
+### 2. Top & Worst Performers
+
+<img src="src/app/img/stockPerformers.png" alt="Stock Performers UI" width="600"/>
+
+### Link to StockTrackerFrontend: https://github.com/Andrew-Ih/StockTrackerFrontend
 
 
 ## 🚀 Technologies and API's Used
