@@ -2,9 +2,11 @@
 
 This **Azure Function App** is built using **C#** to provide stock market data via API endpoints. It integrates with **MarketStack** and **Alpha Vantage**, fetching stock details, top performers, and worst performers daily. The backend is deployed using **Azure DevOps**, **Azure Function Apps**, and **CI/CD pipelines** for automated builds and deployments.
 
+<!--
 ## Live Project Display
 	
 To view this project live, please visit the link: https://purple-ocean-0e575860f.6.azurestaticapps.net/
+-->
 
 
 ## 🚀 Technologies and API's Used
