@@ -11,11 +11,11 @@ To view this project live, please visit the link: https://purple-ocean-0e575860f
 
 ### 1. Stock Search
 
-<img src="src/app/img/stockSearch.png" alt="Stock Search UI" width="600"/>
+<img src="img/stockSearch.png" alt="Stock Search UI" width="600"/>
 
 ### 2. Top & Worst Performers
 
-<img src="src/app/img/stockPerformers.png" alt="Stock Performers UI" width="600"/>
+<img src="img/stockPerformers.png" alt="Stock Performers UI" width="600"/>
 
 ### Link to StockTrackerFrontend: https://github.com/Andrew-Ih/StockTrackerFrontend
 
